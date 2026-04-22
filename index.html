@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anypoint Platform — Entitlement Guide</title>
+  <meta name="description" content="A step-by-step guide for checking your MuleSoft Anypoint Platform flow and vCore usage against your subscription limits.">
+  <style>
+    :root {
+      --blue:        #0176d3;
+      --blue-dark:   #032d60;
+      --blue-light:  #e8f4fd;
+      --green:       #2e844a;
+      --green-light: #eaf5ea;
+      --amber:       #c87000;
+      --amber-light: #fef7ec;
+      --gray-900:    #181818;
+      --gray-700:    #3e3e3e;
+      --gray-500:    #6b6b6b;
+      --gray-300:    #c9c9c9;
+      --gray-100:    #f5f5f5;
+      --white:       #ffffff;
+      --radius:      8px;
+      --nav-w:       220px;
+      --font:        -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font);
+      font-size: 1rem;
+      line-height: 1.7;
+      color: var(--gray-900);
+      background: var(--white);
+    }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    a:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; border-radius: 2px; }
+
+    /* ── Top bar ── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .875rem 2rem;
+      border-bottom: 1px solid var(--gray-300);
+      background: var(--white);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .topbar-logo img {
+      height: 36px;
+      width: auto;
+      display: block;
+    }
+    .topbar-meta {
+      font-size: .825rem;
+      color: var(--gray-500);
+      text-align: right;
+    }
+    .topbar-meta strong {
+      display: block;
+      color: var(--gray-700);
+      font-size: .875rem;
+    }
+
+    /* ── Layout ── */
+    .layout {
+      display: flex;
+      min-height: calc(100vh - 61px);
+    }
+
+    /* ── Sidebar nav ── */
+    .sidenav {
+      width: var(--nav-w);
+      flex-shrink: 0;
+      padding: 2rem 0 2rem 1.5rem;
+      border-right: 1px solid var(--gray-300);
+      position: sticky;
+      top: 61px;
+      height: calc(100vh - 61px);
+      overflow-y: auto;
+    }
+    .sidenav ul {
+      list-style: none;
+      padding: 0;
+    }
+    .sidenav li {
+      margin-bottom: .125rem;
+    }
+    .sidenav a {
+      display: block;
+      padding: .4rem .75rem .4rem 0;
+      font-size: .875rem;
+      color: var(--gray-500);
+      border-left: 3px solid transparent;
+      padding-left: .625rem;
+      transition: color .15s, border-color .15s;
+    }
+    .sidenav a:hover,
+    .sidenav a.active {
+      color: var(--blue);
+      border-left-color: var(--blue);
+      text-decoration: none;
+    }
+    .sidenav .nav-section-label {
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--gray-500);
+      margin: 1.25rem 0 .4rem;
+      padding-left: .625rem;
+    }
+
+    /* ── Main content ── */
+    main {
+      flex: 1;
+      padding: 2.5rem 3rem 4rem 2.5rem;
+      max-width: 820px;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      margin-bottom: 2.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--gray-300);
+    }
+    .hero h1 {
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 700;
+      color: var(--gray-900);
+      line-height: 1.2;
+      margin-bottom: .75rem;
+    }
+    .hero p {
+      font-size: 1.05rem;
+      color: var(--gray-700);
+      max-width: 620px;
+    }
+
+    /* ── Section ── */
+    .section {
+      margin-bottom: 3rem;
+      scroll-margin-top: 80px;
+    }
+    .section h2 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+    }
+    .section h2 .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.75rem;
+      height: 1.75rem;
+      border-radius: 50%;
+      background: var(--blue);
+      color: var(--white);
+      font-size: .8rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .section h3 {
+      font-size: .95rem;
+      font-weight: 600;
+      color: var(--gray-700);
+      margin: 1.5rem 0 .5rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      font-size: .8rem;
+    }
+    .section p {
+      color: var(--gray-700);
+      margin-bottom: .875rem;
+    }
+
+    /* ── Steps ── */
+    ol.steps {
+      list-style: none;
+      counter-reset: s;
+      padding: 0;
+      margin: .75rem 0 1rem;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    ol.steps li {
+      counter-increment: s;
+      display: flex;
+      align-items: flex-start;
+      gap: .875rem;
+      padding: .875rem 1rem;
+      border-bottom: 1px solid var(--gray-300);
+      background: var(--white);
+      font-size: .925rem;
+      color: var(--gray-700);
+    }
+    ol.steps li:last-child { border-bottom: none; }
+    ol.steps li:hover { background: var(--gray-100); }
+    ol.steps li::before {
+      content: counter(s);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.5rem;
+      height: 1.5rem;
+      border-radius: 50%;
+      background: var(--blue-light);
+      color: var(--blue-dark);
+      font-size: .8rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: .1rem;
+    }
+
+    /* ── Nav path ── */
+    .nav-path {
+      display: inline-flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: .3rem;
+      background: var(--blue-light);
+      border: 1px solid #b3d4f0;
+      border-radius: 6px;
+      padding: .45rem .875rem;
+      font-size: .85rem;
+      font-family: monospace;
+      margin: .875rem 0 1.25rem;
+      color: var(--blue-dark);
+    }
+    .nav-path .sep { color: var(--blue); opacity: .6; }
+
+    /* ── Metric grid ── */
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: .625rem;
+      margin: .875rem 0 1.25rem;
+    }
+    .metric-card {
+      background: var(--gray-100);
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius);
+      padding: .875rem 1rem;
+    }
+    .metric-card strong {
+      display: block;
+      font-size: .875rem;
+      color: var(--gray-900);
+      margin-bottom: .2rem;
+    }
+    .metric-card span {
+      font-size: .8rem;
+      color: var(--gray-500);
+    }
+
+    /* ── Callout boxes ── */
+    .callout {
+      display: flex;
+      gap: .75rem;
+      border-radius: var(--radius);
+      padding: .875rem 1rem;
+      margin: 1rem 0;
+      font-size: .9rem;
+      color: var(--gray-700);
+    }
+    .callout-icon { font-size: 1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.tip   { background: var(--amber-light); border: 1px solid #f5d48a; }
+    .callout.note  { background: var(--green-light); border: 1px solid #a3d9a5; }
+    .callout.info  { background: var(--blue-light);  border: 1px solid #b3d4f0; }
+
+    /* ── Threshold badges ── */
+    .threshold-row { display: flex; gap: .875rem; flex-wrap: wrap; margin: .75rem 0; }
+    .threshold-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      background: var(--white);
+      border: 1px solid var(--gray-300);
+      border-radius: 20px;
+      padding: .35rem 1rem;
+      font-size: .875rem;
+      font-weight: 600;
+      color: var(--gray-700);
+    }
+
+    /* ── Resources table ── */
+    .resources-list {
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin: 1rem 0;
+    }
+    .resource-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .75rem 1rem;
+      border-bottom: 1px solid var(--gray-300);
+      font-size: .9rem;
+    }
+    .resource-row:last-child { border-bottom: none; }
+    .resource-row:hover { background: var(--gray-100); }
+    .resource-row a {
+      font-size: .825rem;
+      color: var(--blue);
+    }
+
+    /* ── Divider ── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--gray-300);
+      margin: 2.5rem 0;
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--gray-300);
+      padding: 1.5rem 2rem;
+      font-size: .825rem;
+      color: var(--gray-500);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: .5rem;
+    }
+    footer a { color: var(--gray-500); }
+    footer a:hover { color: var(--blue); }
+
+    /* ── Responsive ── */
+    @media (max-width: 700px) {
+      .sidenav { display: none; }
+      main { padding: 1.5rem 1.25rem 3rem; }
+      .topbar { padding: .75rem 1.25rem; }
+      .metric-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-logo">
+      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1123 333" height="36" aria-label="MuleSoft from Salesforce" style="display:block">
+<g>
+	<g>
+		<defs>
+			<rect id="SVGID_1_" x="4.6" y="3.7" width="1095.6" height="323.3"/>
+		</defs>
+		<clipPath id="SVGID_2_">
+			<use xlink:href="#SVGID_1_"  overflow="visible"/>
+		</clipPath>
+		<path clip-path="url(#SVGID_2_)" fill="#00A1DF" d="M166.9,314.5c-81.8,0-148.1-66.3-148.1-148.1C18.7,84.5,85,18.2,166.9,18.2
+			c81.8,0,148.1,66.3,148.1,148.1C315,248.1,248.7,314.5,166.9,314.5L166.9,314.5z M166.8,3.7C77.3,3.7,4.5,76.2,4.5,165.3
+			C4.5,254.5,77.3,327,166.8,327c89.5,0,162.4-72.5,162.4-161.6C329.2,76.2,256.4,3.7,166.8,3.7L166.8,3.7z"/>
+	</g>
+	<path fill="#00A1DF" d="M125.7,237.9c-24.5-11.5-41.5-37.5-41.5-67.6c0-15.9,4.7-30.6,12.8-42.6l53.4,79.6h32.3l53.4-79.6
+		c8.1,12,12.8,26.8,12.8,42.6c0,28.1-14.8,52.5-36.6,65.1l10.3,39.4c39.2-20.2,65.9-61,65.9-108.1c0-44.5-23.9-83.3-59.5-104.5
+		l-62,95.7l-61.4-96.1c-36,21.1-60.2,60.2-60.2,104.9c0,48.8,28.7,90.9,70.2,110.2L125.7,237.9L125.7,237.9z"/>
+	<polygon fill="#00A1DF" points="451.7,182.2 411.8,97.2 391,97.2 391,233.8 411.8,233.8 411.8,142.5 444,209.1 459.4,209.1 490.8,142.5 490.8,233.8 511.5,233.8 511.5,97.2 490.8,97.2 451.7,182.2 	"/>
+	<path fill="#00A1DF" d="M589.4,195.8c0,15-9.2,21.7-20.1,21.7c-10.9,0-19.6-6.5-19.6-21.7v-59.3h-19.6v62.2c0,11,2.3,20.2,9.8,27.5c5.8,5.5,14,8.8,24,8.8c9.8,0,19.2-3.6,25.9-10.9v9.8H609v-97.3h-19.6V195.8L589.4,195.8z"/>
+	<path fill="#00A1DF" d="M647.3,205.8V97.2h-19.6v109.7c0,14.4,8.1,26.9,26.7,26.9h12.1v-16.7h-8.6C650,217.1,647.3,213.3,647.3,205.8L647.3,205.8z"/>
+	<path fill="#00A1DF" d="M691.7,177.2c0.2-5.9,0.6-8.8,2.5-13.2c3.1-7.3,10.2-12.3,19.4-12.3c9.2,0,16.1,5,19.2,12.3c1.9,4.4,2.5,7.3,2.7,13.2H691.7L691.7,177.2z M713.6,135.4c-24.9,0-41.2,18.2-41.2,49.7c0,37,19.4,49.9,43.8,49.9c17.1,0,26.5-5.2,36.4-15.2L740,208.1c-6.9,6.9-12.7,10-23.6,10c-15.9,0-24.8-10.5-24.8-27.2h63.1v-8.6C754.8,154.6,739.7,135.4,713.6,135.4L713.6,135.4z"/>
+	<path fill="#00A1DF" d="M851.4,166.8c-5.8-5.2-12.9-8.3-25.5-10.2l-15.5-2.3c-6.3-1-11.9-3.3-15.3-6.3c-3.6-3.3-5.2-7.7-5.2-12.7c0-12.1,8.8-21.3,24.9-21.3c11.5,0,21.3,2.5,29.7,10.5l13.2-13C846,100.7,833.4,96,815.3,96c-28.4,0-45.7,16.3-45.7,40.1c0,11.1,3.3,19.8,10,26.1c5.9,5.6,14.8,9.4,25.9,10.9l16.1,2.3c8.1,1.1,11.5,2.5,15,5.8c3.6,3.2,5.4,8.3,5.4,14.2c0,13.2-10.4,20.9-28.2,20.9c-14,0-24.9-3.1-34.9-13l-13.8,13.6c13,13.2,27.8,18,48.4,18c28.6,0,49.1-15,49.1-40.1C862.5,183.2,858.9,173.4,851.4,166.8L851.4,166.8z"/>
+	<path fill="#00A1DF" d="M928.6,211.8c-3.6,3.6-8.6,5.7-14.4,5.7c-5.8,0-10.6-2.1-14.2-5.7c-6-5.9-6.7-16.1-6.7-26.7c0-10.6,0.8-20.7,6.7-26.7c3.6-3.6,8.4-5.6,14.2-5.6c5.7,0,10.7,1.9,14.4,5.6c5.9,5.9,6.7,16.1,6.7,26.7C935.3,195.6,934.5,205.8,928.6,211.8L928.6,211.8z M914.2,135.4c-13.2,0-22.6,5-29,11.5c-9.2,9.6-11.5,21.9-11.5,38.2c0,16.5,2.3,28.8,11.5,38.4c6.3,6.5,15.7,11.5,29,11.5c13.2,0,22.8-5,29.2-11.5c9.2-9.6,11.5-21.9,11.5-38.4c0-16.3-2.3-28.6-11.5-38.2C937,140.4,927.4,135.4,914.2,135.4L914.2,135.4z"/>
+	<path fill="#00A1DF" d="M974.6,123.3v15h-11.1v15h11.1v80.6h19.6v-80.6h19.4v-15h-19.4v-14c0-7.1,3.4-11.3,10.7-11.3h8.6V96.2h-12.3C983.1,96.2,974.6,109.3,974.6,123.3L974.6,123.3z"/>
+	<path fill="#00A1DF" d="M1056.4,108.7h-19.6v29.5h-11.1v15h11.1v53.5c0,14,8.4,27.1,26.7,27.1h11.7v-16.7h-8.1c-7.3,0-10.7-4.2-10.7-11.3v-52.6h18.8v-15h-18.8V108.7L1056.4,108.7z"/>
+	<path fill="#00A1DF" d="M1097.7,131.5c-0.4,1.1-1,2-1.8,2.8c-0.8,0.8-1.7,1.4-2.7,1.9c-1,0.5-2.2,0.7-3.4,0.7c-1.2,0-2.4-0.2-3.4-0.7c-1.1-0.5-2-1.1-2.7-1.9c-0.8-0.8-1.4-1.8-1.8-2.8c-0.4-1.1-0.7-2.3-0.7-3.6c0-1.3,0.2-2.4,0.7-3.5c0.4-1.1,1-2,1.8-2.8c0.8-0.8,1.7-1.4,2.7-1.9c1.1-0.5,2.2-0.7,3.4-0.7c1.2,0,2.3,0.2,3.4,0.7c1,0.5,2,1.1,2.7,1.9c0.8,0.8,1.4,1.7,1.8,2.8c0.4,1.1,0.7,2.3,0.7,3.5C1098.3,129.2,1098.1,130.4,1097.7,131.5L1097.7,131.5z M1099.4,123.8c-0.6-1.3-1.3-2.4-2.3-3.3c-1-0.9-2.1-1.7-3.3-2.2c-1.3-0.5-2.6-0.8-4.1-0.8c-1.4,0-2.8,0.3-4.1,0.8c-1.3,0.5-2.4,1.3-3.4,2.2c-1,0.9-1.7,2-2.3,3.3c-0.6,1.3-0.8,2.6-0.8,4.1c0,1.5,0.3,2.9,0.8,4.2c0.6,1.3,1.3,2.4,2.3,3.3c1,0.9,2.1,1.7,3.4,2.2c1.3,0.5,2.6,0.8,4.1,0.8c1.4,0,2.8-0.3,4.1-0.8c1.3-0.5,2.4-1.3,3.3-2.2c1-0.9,1.7-2.1,2.3-3.3c0.6-1.3,0.8-2.7,0.8-4.2C1100.2,126.4,1100,125.1,1099.4,123.8L1099.4,123.8z"/>
+	<path fill="#00A1DF" d="M1089.5,127.3h-2v-3.9h2.5c0.3,0,0.6,0,1,0.1c0.3,0,0.6,0.1,0.9,0.3c0.3,0.1,0.5,0.3,0.6,0.6c0.2,0.2,0.2,0.6,0.2,1c0,0.5-0.1,0.9-0.3,1.1c-0.2,0.3-0.4,0.5-0.7,0.6c-0.3,0.1-0.6,0.2-1,0.2C1090.4,127.3,1090,127.3,1089.5,127.3L1089.5,127.3z M1093.7,127.8c0.6-0.5,0.9-1.3,0.9-2.4c0-1.2-0.3-2.1-1.1-2.6c-0.7-0.6-1.8-0.9-3.2-0.9h-4.7v12.3h1.9v-5.3h2l3.3,5.3h2l-3.5-5.4C1092.4,128.6,1093.1,128.3,1093.7,127.8L1093.7,127.8z"/>
+</g>
+</svg>
+    </div>
+    <div class="topbar-meta">
+      <strong>Anypoint Platform — Entitlement Guide</strong>
+      How to check your subscription usage
+    </div>
+  </div>
+
+  <div class="layout">
+
+    <!-- Sidebar -->
+    <nav class="sidenav" aria-label="Page sections">
+      <ul>
+        <li><span class="nav-section-label">Overview</span></li>
+        <li><a href="#overview">Introduction</a></li>
+
+        <li><span class="nav-section-label">Steps</span></li>
+        <li><a href="#flows">1 — Check Flow Usage</a></li>
+        <li><a href="#vcores">2 — Check vCore Usage</a></li>
+        <li><a href="#alerts">3 — Set Up Alerts</a></li>
+
+        <li><span class="nav-section-label">Reference</span></li>
+        <li><a href="#notes">Things to Know</a></li>
+        <li><a href="#resources">Documentation Links</a></li>
+      </ul>
+    </nav>
+
+    <!-- Content -->
+    <main>
+
+      <div class="hero">
+        <h1>How to Check Your Anypoint Platform Entitlements</h1>
+        <p>Your MuleSoft subscription includes a set of licensed resources — integration flows, vCores, gateways, and more. This guide shows you exactly where to find that information in the Anypoint Platform.</p>
+      </div>
+
+      <!-- Overview -->
+      <section class="section" id="overview" data-slide="overview" data-slide-number="1" data-slide-title="Introduction">
+        <div class="callout info">
+          <span class="callout-icon" aria-hidden="true">ℹ️</span>
+          <div>
+            <strong>Two things to check, two different places.</strong><br>
+            Flow usage lives in <strong>Usage Reports</strong> (username icon → Usage Reports).<br>
+            vCore capacity lives in <strong>Access Management</strong> (gear icon → Access Management → Subscription → Runtime Manager).<br>
+            Both are covered below.
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 1: Flows -->
+      <section class="section" id="flows" data-slide="flows" data-slide-number="2" data-slide-title="Check Flow Usage">
+        <h2><span class="num" aria-hidden="true">1</span> Check Your Flow Usage (Mule Runtime)</h2>
+
+        <p>Flows are the active integrations running inside your Mule applications. Your contract sets a limit on how many can run simultaneously — this is where you see where you stand.</p>
+
+        <h3>How to get there</h3>
+        <ol class="steps">
+          <li>Log in to Anypoint Platform at <a href="https://anypoint.mulesoft.com" target="_blank" rel="noopener">anypoint.mulesoft.com</a></li>
+          <li>Click your <strong>username icon</strong> in the top-right corner</li>
+          <li>Select <strong>Usage Reports</strong> from the dropdown</li>
+          <li>Use the <strong>Product</strong> dropdown to select <strong>Mule Runtime</strong></li>
+          <li>Choose <strong>Monthly Usage Report</strong> for a summary, or <strong>Daily Usage Report</strong> for trends</li>
+        </ol>
+
+        <div class="nav-path" aria-label="Navigation path">
+          Username icon <span class="sep">›</span> Usage Reports <span class="sep">›</span> Product: Mule Runtime
+        </div>
+
+        <h3>What you will see</h3>
+        <div class="metric-grid">
+          <div class="metric-card"><strong>Flow count</strong><span>Active flows running across your org</span></div>
+          <div class="metric-card"><strong>By Business Group</strong><span>Usage per team or division</span></div>
+          <div class="metric-card"><strong>By Application</strong><span>Which apps consume the most</span></div>
+          <div class="metric-card"><strong>Prod vs. Sandbox</strong><span>Filter by environment type</span></div>
+          <div class="metric-card"><strong>Monthly peak</strong><span>Highest simultaneous flow count</span></div>
+          <div class="metric-card"><strong>Export as CSV</strong><span>Download for offline analysis</span></div>
+        </div>
+
+        <div class="callout tip">
+          <span class="callout-icon" aria-hidden="true">💡</span>
+          <p><strong>Good to know:</strong> Only flows that actively trigger integrations count against your limit. Internal helper flows used purely for code organization do not count.</p>
+        </div>
+
+        <div class="callout tip">
+          <span class="callout-icon" aria-hidden="true">⚠️</span>
+          <p><strong>Access requirement:</strong> Usage Reports are only visible at the <strong>root organization level</strong> with the Usage Viewer permission. If you do not see the option, contact your org administrator.</p>
+        </div>
+      </section>
+
+      <hr class="divider">
+
+      <!-- Step 2: vCores -->
+      <section class="section" id="vcores" data-slide="vcores" data-slide-number="3" data-slide-title="Check vCore Usage">
+        <h2><span class="num" aria-hidden="true">2</span> Check Your vCore Usage (Compute Capacity)</h2>
+
+        <p>vCores are the computing resources your Mule applications run on in CloudHub. Your contract gives you a set amount to allocate across environments. This page shows your purchased limit versus what is currently in use.</p>
+
+        <h3>How to get there</h3>
+        <ol class="steps">
+          <li>Click the <strong>gear icon</strong> (settings) in the top-right navigation bar</li>
+          <li>Select <strong>Access Management</strong></li>
+          <li>In the left-hand navigation, scroll to the <strong>Subscription</strong> section</li>
+          <li>Click <strong>Runtime Manager</strong></li>
+          <li>Use the <strong>Business Group</strong> dropdown to switch between groups if your org is divided</li>
+        </ol>
+
+        <div class="nav-path" aria-label="Navigation path">
+          Gear icon <span class="sep">›</span> Access Management <span class="sep">›</span> Subscription <span class="sep">›</span> Runtime Manager
+        </div>
+
+        <h3>What you will see</h3>
+        <p>Each resource shows a <strong>progress bar</strong> and an <strong>"X / Y in use"</strong> count — your current usage against your purchased limit. The page also shows your <strong>Subscription Tier</strong> and <strong>Expiration Date</strong>.</p>
+
+        <div class="metric-grid">
+          <div class="metric-card"><strong>Production vCores</strong><span>For production environments</span></div>
+          <div class="metric-card"><strong>Sandbox vCores</strong><span>For sandbox / test environments</span></div>
+          <div class="metric-card"><strong>Design vCores</strong><span>For design environments</span></div>
+          <div class="metric-card"><strong>VPCs</strong><span>Virtual Private Clouds / Private Spaces</span></div>
+          <div class="metric-card"><strong>Network Connections</strong><span>VPNs or Transit Gateways</span></div>
+          <div class="metric-card"><strong>Flex Gateways</strong><span>Small and large managed gateways</span></div>
+        </div>
+
+        <div class="callout note">
+          <span class="callout-icon" aria-hidden="true">✅</span>
+          <p>Flows and vCores are <strong>two separate limits</strong>. You can be within your vCore capacity but approaching your flow limit, or vice versa. Check both independently.</p>
+        </div>
+      </section>
+
+      <hr class="divider">
+
+      <!-- Step 3: Alerts -->
+      <section class="section" id="alerts" data-slide="alerts" data-slide-number="4" data-slide-title="Set Up Alerts">
+        <h2><span class="num" aria-hidden="true">3</span> Set Up Alerts</h2>
+
+        <p>Anypoint Platform automatically notifies you when your monthly entitlement consumption hits key thresholds. Make sure the right person on your team is set up to receive them.</p>
+
+        <div class="callout info">
+          <span class="callout-icon" aria-hidden="true">🔔</span>
+          <div>
+            <strong>Automatic monthly threshold alerts</strong>
+            <div class="threshold-row" style="margin-top:.5rem;">
+              <span class="threshold-badge">⚡ 80% consumed</span>
+              <span class="threshold-badge">🔴 90% consumed</span>
+            </div>
+            <p style="margin-top:.5rem; font-size:.875rem;">Alerts run on a daily rollup cycle — not in real time. A sudden spike will appear in the next daily update.</p>
+          </div>
+        </div>
+      </section>
+
+      <hr class="divider">
+
+      <!-- Things to know -->
+      <section class="section" id="notes" data-slide="notes" data-slide-number="5" data-slide-title="Things to Know">
+        <h2>A Few Things Worth Knowing</h2>
+
+        <h3>API instances count until deleted — not just deactivated</h3>
+        <p>If you manage APIs through Anypoint API Manager, those instances count against your API entitlement until they are explicitly <strong>deleted</strong>. Simply undeploying or deactivating an application does not remove it from the count.</p>
+
+        <h3>The last 3 days of data may still be finalizing</h3>
+        <p>Usage data refreshes twice a day. The most recent three days are still being calculated. For an accurate end-of-month snapshot, wait until the period has fully closed before exporting.</p>
+
+        <h3>Usage Reports are not your invoice</h3>
+        <p>These reports show consumption for visibility and planning purposes. Your actual billing is managed separately through your Salesforce contract.</p>
+
+        <h3>If you are on Usage-Based Pricing (UBP)</h3>
+        <p>Consumption is tracked and reconciled differently. Your Customer Success Manager is the best person to review your UBP position.</p>
+
+        <h3>Government Cloud and Private Cloud Edition</h3>
+        <p>Usage Reports are not available in these environments. Contact your account team for an entitlement summary.</p>
+      </section>
+
+      <hr class="divider">
+
+      <!-- Resources -->
+      <section class="section" id="resources" data-slide="resources" data-slide-number="6" data-slide-title="Documentation Links">
+        <h2>Official Documentation</h2>
+        <p>These MuleSoft documentation pages are the authoritative source for everything covered in this guide.</p>
+
+        <div class="resources-list">
+          <div class="resource-row">
+            <div>
+              <strong>Usage Reports</strong>
+              <div style="font-size:.85rem; color: var(--gray-500); margin-top:.1rem;">How to access, navigate, and export usage reports in Anypoint Platform</div>
+            </div>
+            <a href="https://docs.mulesoft.com/general/usage-reports" target="_blank" rel="noopener">Open →</a>
+          </div>
+          <div class="resource-row">
+            <div>
+              <strong>Usage Metrics Reference</strong>
+              <div style="font-size:.85rem; color: var(--gray-500); margin-top:.1rem;">Definitions for every metric tracked across all Anypoint Platform products</div>
+            </div>
+            <a href="https://docs.mulesoft.com/general/usage-metrics" target="_blank" rel="noopener">Open →</a>
+          </div>
+        </div>
+
+        <div class="callout info" style="margin-top:1.5rem;">
+          <span class="callout-icon" aria-hidden="true">💬</span>
+          <p>Have questions about your specific entitlements, contract limits, or upcoming renewal? Reach out to your MuleSoft account team — we can pull a full summary and walk through it with you.</p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <footer>
+    <span>MuleSoft — An Anypoint Platform Guide</span>
+    <span>
+      <a href="https://docs.mulesoft.com/general/usage-reports" target="_blank" rel="noopener">Usage Reports Docs</a>
+      &nbsp;·&nbsp;
+      <a href="https://docs.mulesoft.com/general/usage-metrics" target="_blank" rel="noopener">Usage Metrics Docs</a>
+      &nbsp;·&nbsp;
+      <a href="https://anypoint.mulesoft.com" target="_blank" rel="noopener">Anypoint Platform</a>
+    </span>
+  </footer>
+
+  <script>
+    // Highlight active nav item on scroll
+    (function() {
+      var sections = document.querySelectorAll('.section[id]');
+      var links = document.querySelectorAll('.sidenav a');
+      function onScroll() {
+        var scrollY = window.scrollY + 100;
+        sections.forEach(function(s) {
+          if (scrollY >= s.offsetTop && scrollY < s.offsetTop + s.offsetHeight) {
+            links.forEach(function(l) { l.classList.remove('active'); });
+            var active = document.querySelector('.sidenav a[href="#' + s.id + '"]');
+            if (active) active.classList.add('active');
+          }
+        });
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    })();
+  </script>
+
+  <!-- Vercel Analytics -->
+  <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+  <script defer src="/_vercel/insights/script.js"></script>
+  <script>
+  /* Vercel Web Analytics + Custom Events */
+  (function() {
+    var PID = 'anypoint-entitlement-guide';
+    va('event', { name: 'Page Open', data: { proposal: PID, referrer: document.referrer || 'direct' } });
+    var viewedSections = {};
+    var sections = document.querySelectorAll('section[id], [data-slide]');
+    if (sections.length) {
+      var obs = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            var id = entry.target.id || entry.target.getAttribute('data-slide') || '';
+            if (!viewedSections[id]) {
+              viewedSections[id] = true;
+              var title = entry.target.getAttribute('data-slide-title') ||
+                (entry.target.querySelector('h1,h2,h3') ? entry.target.querySelector('h1,h2,h3').textContent.trim() : id);
+              va('event', { name: 'Section View', data: { section: title, proposal: PID } });
+            }
+          }
+        });
+      }, { threshold: 0.4 });
+      sections.forEach(function(s) { obs.observe(s); });
+    }
+    document.addEventListener('click', function(e) {
+      var cta = e.target.closest('[data-cta]');
+      if (cta) {
+        var text = cta.getAttribute('data-cta-text') || cta.textContent.trim().slice(0, 100);
+        va('event', { name: 'CTA Click', data: { text: text, proposal: PID } });
+      }
+    });
+    document.addEventListener('click', function(e) {
+      var link = e.target.closest('a[href]');
+      if (link && !link.closest('[data-cta]')) {
+        var isOutbound = false;
+        try { isOutbound = new URL(link.href).hostname !== window.location.hostname; } catch(ex) {}
+        if (isOutbound) {
+          va('event', { name: 'Outbound Link', data: { text: link.textContent.trim().slice(0, 100), url: link.href.slice(0, 255), proposal: PID } });
+        }
+      }
+    });
+    var depthFired = {};
+    function checkDepth() {
+      var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      var docHeight = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight) - window.innerHeight;
+      if (docHeight <= 0) return;
+      var pct = Math.round((scrollTop / docHeight) * 100);
+      [25, 50, 75, 100].forEach(function(milestone) {
+        if (pct >= milestone && !depthFired[milestone]) {
+          depthFired[milestone] = true;
+          va('event', { name: 'Scroll Depth', data: { depth: milestone, proposal: PID } });
+        }
+      });
+    }
+    window.addEventListener('scroll', checkDepth, { passive: true });
+    window.addEventListener('load', checkDepth);
+  })();
+  </script>
+
+  <!-- SmokinTerritory Engagement Beacon -->
+  <script>
+  (function() {
+    var PID = 'anypoint-entitlement-guide';
+    var BEACON = 'https://smokin-territory.vercel.app/api/beacon';
+    var ref = new URLSearchParams(window.location.search).get('ref') || '';
+    var sid = sessionStorage.getItem('st_sid');
+    if (!sid) {
+      sid = 'sess_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+      sessionStorage.setItem('st_sid', sid);
+    }
+    var storeKey = 'st_beacon_' + PID;
+    var prior = null;
+    try { prior = JSON.parse(localStorage.getItem(storeKey)); } catch(e) {}
+    var visitNumber = 1;
+    var isReturn = false;
+    if (prior && prior.last_ts) {
+      var hoursSince = (Date.now() - prior.last_ts) / 3600000;
+      if (hoursSince > 1) { isReturn = true; visitNumber = (prior.visit_count || 1) + 1; }
+    }
+    try { localStorage.setItem(storeKey, JSON.stringify({ last_session_id: sid, last_ts: Date.now(), visit_count: visitNumber })); } catch(e) {}
+    function send(eventType, fields) {
+      var payload = { proposal_id: PID, session_id: sid, event_type: eventType, referrer: ref || document.referrer || null, slide_number: (fields && fields.slide_number) || 0, slide_title: (fields && fields.slide_title) || null, duration_seconds: (fields && fields.duration_seconds) || null, metadata: (fields && fields.metadata) || {} };
+      var body = JSON.stringify(payload);
+      try {
+        if (navigator.sendBeacon) { navigator.sendBeacon(BEACON, new Blob([body], {type: 'application/json'})); }
+        else { fetch(BEACON, {method:'POST', body:body, headers:{'Content-Type':'application/json'}, keepalive:true}); }
+      } catch(e) {}
+    }
+    if (isReturn) { send('return_visit', {metadata: {visit_number: visitNumber, days_since_last: prior ? Math.round((Date.now() - prior.last_ts) / 86400000 * 10) / 10 : 0}}); }
+    send('proposal_opened', {metadata: {viewport_width: window.innerWidth, viewport_height: window.innerHeight, is_return_visit: isReturn}});
+    var viewed = {};
+    var slideStart = {};
+    var sections = document.querySelectorAll('section[id], [data-slide]');
+    if (sections.length) {
+      var slideObs = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          var el = entry.target;
+          var id = el.id || el.getAttribute('data-slide') || '';
+          var num = parseInt(el.getAttribute('data-slide-number') || '0') || Array.prototype.indexOf.call(sections, el) + 1;
+          var title = el.getAttribute('data-slide-title') || el.querySelector('h1,h2,h3')?.textContent?.trim() || id;
+          if (entry.isIntersecting) {
+            slideStart[id] = Date.now();
+            if (!viewed[id]) { viewed[id] = true; send('slide_viewed', {slide_number: num, slide_title: title}); }
+          } else if (slideStart[id]) {
+            var secs = Math.round((Date.now() - slideStart[id]) / 1000);
+            if (secs > 1) { send('time_on_slide', {slide_number: num, slide_title: title, duration_seconds: secs}); }
+            delete slideStart[id];
+          }
+        });
+      }, {threshold: 0.4});
+      sections.forEach(function(s) { slideObs.observe(s); });
+    }
+    var depthFired2 = {};
+    function createSentinels() {
+      [25, 50, 75, 100].forEach(function(pct) {
+        var sentinel = document.createElement('div');
+        sentinel.style.cssText = 'position:absolute;left:0;width:1px;height:1px;pointer-events:none;';
+        sentinel.setAttribute('data-depth', pct);
+        document.body.style.position = document.body.style.position || 'relative';
+        document.body.appendChild(sentinel);
+        function position() { var docHeight = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight); sentinel.style.top = Math.round(docHeight * pct / 100) + 'px'; }
+        position(); window.addEventListener('resize', position);
+        var depthObs = new IntersectionObserver(function(entries) { if (entries[0].isIntersecting && !depthFired2[pct]) { depthFired2[pct] = true; send('scroll_depth', {metadata: {depth_pct: pct}}); } }, {threshold: 0});
+        depthObs.observe(sentinel);
+      });
+    }
+    if (document.readyState === 'complete') createSentinels(); else window.addEventListener('load', createSentinels);
+    document.addEventListener('click', function(e) {
+      var cta = e.target.closest('[data-cta]');
+      if (cta) { var ctaText = cta.getAttribute('data-cta-text') || cta.textContent.trim().slice(0, 100); var ctaUrl = cta.href || cta.getAttribute('data-cta-url') || ''; var section = cta.closest('section[id], [data-slide]'); var slideNum = 0; var slideTitle = ''; if (section) { slideNum = parseInt(section.getAttribute('data-slide-number') || '0') || Array.prototype.indexOf.call(sections, section) + 1; slideTitle = section.getAttribute('data-slide-title') || section.querySelector('h1,h2,h3')?.textContent?.trim() || ''; } send('cta_clicked', {slide_number: slideNum, slide_title: slideTitle, metadata: {cta_text: ctaText, cta_url: ctaUrl, cta_position: section ? section.id : 'page'}}); }
+    });
+    document.addEventListener('click', function(e) {
+      var link = e.target.closest('a[href]');
+      if (link && !link.closest('[data-cta]')) { var isOutbound = false; try { isOutbound = new URL(link.href).hostname !== window.location.hostname; } catch(e) {} var section = link.closest('section[id], [data-slide]'); var slideNum = 0; var slideTitle = ''; if (section) { slideNum = parseInt(section.getAttribute('data-slide-number') || '0') || Array.prototype.indexOf.call(sections, section) + 1; slideTitle = section.getAttribute('data-slide-title') || section.querySelector('h1,h2,h3')?.textContent?.trim() || ''; } send('link_clicked', {slide_number: slideNum, slide_title: slideTitle, metadata: {link_text: link.textContent.trim().slice(0, 100), link_url: link.href, is_outbound: isOutbound}}); }
+    });
+    window.addEventListener('beforeunload', function() {
+      Object.keys(slideStart).forEach(function(id) { var secs = Math.round((Date.now() - slideStart[id]) / 1000); if (secs > 1) { var el = document.getElementById(id) || document.querySelector('[data-slide="' + id + '"]'); var num = 0; var title = id; if (el) { num = parseInt(el.getAttribute('data-slide-number') || '0') || Array.prototype.indexOf.call(sections, el) + 1; title = el.getAttribute('data-slide-title') || el.querySelector('h1,h2,h3')?.textContent?.trim() || id; } send('time_on_slide', {slide_number: num, slide_title: title, duration_seconds: secs}); } });
+    });
+  })();
+  </script>
+
+</body>
+</html>
